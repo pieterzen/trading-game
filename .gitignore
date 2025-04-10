@@ -1,0 +1,21 @@
+# .gitignore
+
+node_modules/
+.vercel/
+.next/
+dist/
+build/
+
+*.log
+*.tmp
+*.temp
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.vscode/
+*.idea/
+
+# OS and environment files
+.DS_Store  # macOS
+Thumbs.db  # Windows
