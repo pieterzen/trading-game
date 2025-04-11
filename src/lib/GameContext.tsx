@@ -176,7 +176,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       const price = Math.round(item.basePrice * ((2 - (1.5 * Math.max(0, Math.min(10, quantity)) / 10)) * 0.7 + 0.3));
 
       // Get the current quantity
-      const currentQuantity = post.inventory[itemId]?.quantity || 0;
+      // Make sure post.inventory exists before accessing it
+      const currentQuantity = post.inventory && post.inventory[itemId] ? post.inventory[itemId].quantity : 0;
 
       // Calculate the difference in quantity
       const quantityDiff = quantity - currentQuantity;
@@ -248,7 +249,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     if (!post || !item) return 0;
 
-    const inventoryItem = post.inventory[itemId];
+    // Check if post.inventory exists before accessing it
+    const inventoryItem = post.inventory ? post.inventory[itemId] : undefined;
     const stock = inventoryItem ? inventoryItem.quantity : 0;
     const basePrice = item.basePrice;
 

@@ -4,13 +4,20 @@
   "private": true,
   "workspaces": [
     ".",
-    "worker"
+    "worker",
+    "functions"
   ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "deploy": "next build && firebase deploy",
+    "deploy:hosting": "next build && firebase deploy --only hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "emulators": "firebase emulators:start",
+    "emulators:clear": "firebase emulators:start --clear",
+    "dev:emulators": "concurrently \"npm run dev\" \"npm run emulators\"",
     "build:worker": "opennextjs-cloudflare",
     "preview": "opennextjs-cloudflare && wrangler dev",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
@@ -78,6 +85,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.1.2",
     "eslint": "^9.24.0",
     "eslint-config-next": "15.3.0",
     "postcss": "^8.4.24",

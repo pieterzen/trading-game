@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { Building2, Coins, Package, Plus, Save, Edit, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
 export default function TradingPostSelection() {
@@ -51,16 +50,11 @@ export default function TradingPostSelection() {
           {gameSession.tradingPosts.map((post) => (
             <Card key={post.id} className="overflow-hidden transition-all hover:shadow-md">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
-                      <Building2 className="h-4 w-4 text-primary" />
-                    </div>
-                    <CardTitle className="text-xl">{post.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+                    <Building2 className="h-4 w-4 text-primary" />
                   </div>
-                  <Badge variant={post.isActive ? "success" : "secondary"}>
-                    {post.isActive ? t.gameActive || 'Active' : t.gameInactive || 'Inactive'}
-                  </Badge>
+                  <CardTitle className="text-xl">{post.name}</CardTitle>
                 </div>
                 <CardDescription className="mt-2">{post.description}</CardDescription>
               </CardHeader>
@@ -86,7 +80,7 @@ export default function TradingPostSelection() {
                     ) : (
                       <div
                         className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
-                        onClick={() => gameSession.isActive && handleEditCurrency(post.id, post.currency)}
+                        onClick={() => handleEditCurrency(post.id, post.currency)}
                       >
                         <Coins className="h-4 w-4 text-amber-500" />
                         <span className="font-medium">{post.currency}</span>
@@ -98,7 +92,7 @@ export default function TradingPostSelection() {
                     <span className="text-xs font-medium text-muted-foreground">{t.items || 'Items'}</span>
                     <div className="flex items-center gap-2">
                       <Package className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{Object.keys(post.inventory).length}</span>
+                      <span className="font-medium">{post.inventory ? Object.keys(post.inventory).length : 0}</span>
                     </div>
                   </div>
                 </div>

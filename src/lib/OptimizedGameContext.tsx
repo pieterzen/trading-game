@@ -37,11 +37,14 @@ export function useOptimizedGameContext() {
     });
 
     context.gameSession.tradingPosts.forEach(post => {
-      Object.entries(post.inventory).forEach(([itemId, item]) => {
-        if (result[itemId]) {
-          result[itemId].totalQuantity += item.quantity;
-        }
-      });
+      // Check if post.inventory exists before using Object.entries
+      if (post.inventory) {
+        Object.entries(post.inventory).forEach(([itemId, item]) => {
+          if (result[itemId]) {
+            result[itemId].totalQuantity += item.quantity;
+          }
+        });
+      }
     });
 
     return Object.values(result);

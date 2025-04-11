@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useGameContext } from '@/lib/GameContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import { Building2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 export default function TradingPostLayout({
   children,
@@ -25,37 +24,12 @@ export default function TradingPostLayout({
             <h1 className="text-xl font-semibold">{t.tradingPostView || 'Trading Posts'}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <GameStatusBadge isActive={gameSession.isActive} t={t} />
+            {/* Game status badge removed */}
           </div>
         </div>
       </div>
       {children}
     </div>
-  );
-}
-
-// Separate component to handle client-side rendering of status
-function GameStatusBadge({ isActive, t }: { isActive: boolean, t: any }) {
-  // Use state to ensure consistent rendering between server and client
-  const [mounted, setMounted] = useState(false);
-
-  // Only show the actual status after client-side hydration is complete
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // During server rendering and initial client render, show a neutral state
-  if (!mounted) {
-    return (
-      <Badge variant="secondary">Loading...</Badge>
-    );
-  }
-
-  // After hydration, show the actual status
-  return (
-    <Badge variant={isActive ? "success" : "secondary"}>
-      {isActive ? t.gameActive || 'Game Active' : t.gameInactive || 'Game Inactive'}
-    </Badge>
   );
 }
 

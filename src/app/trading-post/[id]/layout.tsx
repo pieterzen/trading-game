@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { use } from 'react';
 import { useGameContext } from '@/lib/GameContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 export default function TradingPostDetailLayout({
   children,
@@ -15,8 +14,9 @@ export default function TradingPostDetailLayout({
   children: React.ReactNode;
   params: { id: string };
 }) {
-  // In this version of Next.js, we can access params directly
-  const postId = params.id;
+  // In the latest version of Next.js, params is a Promise that needs to be unwrapped
+  const unwrappedParams = use(params);
+  const postId = unwrappedParams.id;
 
   const { gameSession } = useGameContext();
   const { t } = useLanguage();
@@ -63,8 +63,6 @@ export default function TradingPostDetailLayout({
               <span className="text-sm text-muted-foreground">coins</span>
             </div>
           )}
-
-          <PostStatusBadge isActive={post?.isActive} t={t} />
         </div>
       </div>
 
@@ -75,27 +73,4 @@ export default function TradingPostDetailLayout({
   );
 }
 
-// Separate component to handle client-side rendering of status
-function PostStatusBadge({ isActive, t }: { isActive?: boolean, t: any }) {
-  // Use state to ensure consistent rendering between server and client
-  const [mounted, setMounted] = useState(false);
 
-  // Only show the actual status after client-side hydration is complete
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // During server rendering and initial client render, show a neutral state
-  if (!mounted) {
-    return (
-      <Badge variant="secondary">Loading...</Badge>
-    );
-  }
-
-  // After hydration, show the actual status
-  return (
-    <Badge variant={isActive ? "success" : "secondary"}>
-      {isActive ? t.postActive || 'Active' : t.postInactive || 'Inactive'}
-    </Badge>
-  );
-}

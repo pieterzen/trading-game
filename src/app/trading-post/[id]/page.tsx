@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useRef, useEffect, use } from 'react';
 import { useGameContext } from '@/lib/GameContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import { ArrowDown, ArrowUp, Coins, Package, Plus, Minus, BarChart3 } from 'lucide-react';
@@ -16,10 +16,13 @@ if (typeof window !== 'undefined') {
   Chart.register(...registerables);
 }
 
+// Note: generateStaticParams() has been moved to a separate file
+
 // Optimized version of the trading post detail page
 export default function TradingPostDetail({ params }: { params: { id: string } }) {
-  // In this version of Next.js, we can access params directly
-  const postId = params.id;
+  // In the latest version of Next.js, params is a Promise that needs to be unwrapped
+  const unwrappedParams = use(params);
+  const postId = unwrappedParams.id;
 
   const { gameSession, updateInventory, updateCurrency, calculatePrice } = useGameContext();
   const { t } = useLanguage();
@@ -48,7 +51,7 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
 
   // Memoize inventory items with calculated prices
   const inventoryWithPrices = useMemo(() => {
-    if (!post) return [];
+    if (!post || !post.inventory) return [];
 
     return Object.entries(post.inventory).map(([itemId, item]) => {
       const currentPrice = calculatePrice(post.id, itemId);
@@ -87,7 +90,7 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
 
   // Memoize stock distribution chart data
   const stockDistributionData = useMemo(() => {
-    if (!post) return null;
+    if (!post || !post.inventory) return null;
 
     const inventoryItems = Object.values(post.inventory);
     if (inventoryItems.length === 0) return null;
@@ -99,34 +102,65 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
     return { labels, data, colors };
   }, [post, generateColors]);
 
-  // Memoize price history data (simulated for demo)
+  // Memoize price and stock history data (simulated for demo)
   const priceHistoryData = useMemo(() => {
-    if (!post) return null;
+    if (!post || !post.inventory) return null;
 
     const inventoryItems = Object.values(post.inventory);
     if (inventoryItems.length === 0) return null;
 
-    // Generate some sample data points for the last 7 days
-    const labels = Array.from({ length: 7 }, (_, i) => {
+    // Generate some sample data points for the last 30 minutes
+    const labels = Array.from({ length: 6 }, (_, i) => {
       const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      return date.toLocaleDateString();
+      date.setMinutes(date.getMinutes() - (30 - i * 6));
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     });
 
-    // Generate random price history for each item
-    const datasets = inventoryItems.slice(0, 5).map((item, index) => {
+    // Generate datasets for up to 3 items (to avoid overcrowding)
+    const itemsToShow = inventoryItems.slice(0, 3);
+    const datasets = [];
+
+    // Generate price datasets
+    itemsToShow.forEach((item, index) => {
       const basePrice = item.basePrice;
-      const data = Array.from({ length: 7 }, () => {
+      const color = generateColors(1)[0];
+
+      // Price data
+      const priceData = Array.from({ length: 6 }, () => {
         return Math.round(basePrice * (0.8 + Math.random() * 0.4)); // Random fluctuation between 80% and 120%
       });
 
-      return {
-        label: item.name,
-        data,
-        borderColor: generateColors(1)[0],
+      datasets.push({
+        label: `${item.name} (Price)`,
+        data: priceData,
+        borderColor: color,
+        backgroundColor: color,
+        borderWidth: 2,
         fill: false,
-        tension: 0.1
-      };
+        tension: 0.1,
+        yAxisID: 'y'
+      });
+
+      // Stock data
+      const stockData = Array.from({ length: 6 }, (_, i) => {
+        // Start with current quantity and generate history backwards
+        // with small random changes
+        const currentStock = item.quantity;
+        const randomChange = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+        return Math.max(0, currentStock - randomChange * (6 - i));
+      });
+
+      datasets.push({
+        label: `${item.name} (Stock)`,
+        data: stockData,
+        borderColor: `${color}88`, // Semi-transparent version of the same color
+        backgroundColor: `${color}22`,
+        borderWidth: 2,
+        borderDash: [5, 5],
+        fill: true,
+        tension: 0.1,
+        yAxisID: 'y1'
+      });
     });
 
     return { labels, datasets };
@@ -146,7 +180,8 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
     if (!item) return;
 
     // Get current quantity if item already exists in inventory
-    const currentQuantity = post.inventory[selectedItemId]?.quantity || 0;
+    // Make sure post.inventory exists before accessing it
+    const currentQuantity = post.inventory && post.inventory[selectedItemId] ? post.inventory[selectedItemId].quantity : 0;
     updateInventory(post.id, selectedItemId, currentQuantity + itemQuantity);
 
     // Reset selection
@@ -218,21 +253,40 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
           },
           title: {
             display: true,
-            text: t.priceHistory || 'Price History'
+            text: t.priceAndStockHistory || 'Price & Stock History'
           }
         },
         scales: {
           y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
             beginAtZero: false,
             title: {
               display: true,
               text: t.price || 'Price'
+            },
+            grid: {
+              borderDash: [2, 2]
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: t.stock || 'Stock'
+            },
+            grid: {
+              drawOnChartArea: false
             }
           },
           x: {
             title: {
               display: true,
-              text: t.date || 'Date'
+              text: t.time || 'Time'
             }
           }
         }
@@ -264,161 +318,99 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">{post.name}</h1>
-        <p className="text-muted-foreground">
-          {post.description || t.tradingPostView || 'Trading Post Details'}
-        </p>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t.currency || 'Currency'}
-            </CardTitle>
-          </CardHeader>
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-500" />
+            {t.currency || 'Currency'}: <span className="text-2xl font-bold">{post.currency}</span>
+          </CardTitle>
+        </CardHeader>
+        {gameSession.isActive && (
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Coins className="h-5 w-5 text-amber-500" />
-                <span className="text-2xl font-bold">{post.currency}</span>
-              </div>
-
-              {gameSession.isActive && (
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handleUpdateCurrency(post.currency + 1)}
-                        disabled={!gameSession.isActive}
-                      >
-                        +1
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handleUpdateCurrency(post.currency + 5)}
-                        disabled={!gameSession.isActive}
-                      >
-                        +5
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handleUpdateCurrency(post.currency + 10)}
-                        disabled={!gameSession.isActive}
-                      >
-                        +10
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handleUpdateCurrency(Math.max(0, post.currency - 1))}
-                        disabled={!gameSession.isActive || post.currency < 1}
-                      >
-                        -1
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handleUpdateCurrency(Math.max(0, post.currency - 5))}
-                        disabled={!gameSession.isActive || post.currency < 5}
-                      >
-                        -5
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handleUpdateCurrency(Math.max(0, post.currency - 10))}
-                        disabled={!gameSession.isActive || post.currency < 10}
-                      >
-                        -10
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Manual Currency Adjustment */}
-                  <div className="mt-2 border-t pt-2">
-                    <div className="text-xs font-medium mb-1">{t.manualCurrencyAdjustment || 'Manual Adjustment'}</div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={manualCurrencyAmount}
-                        onChange={(e) => setManualCurrencyAmount(parseInt(e.target.value) || 0)}
-                        className="h-7 text-xs"
-                        placeholder="+/- amount"
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs whitespace-nowrap"
-                        onClick={handleAddManualCurrency}
-                        disabled={!gameSession.isActive || manualCurrencyAmount === 0}
-                      >
-                        {manualCurrencyAmount > 0 ? 'Add' : manualCurrencyAmount < 0 ? 'Remove' : 'Apply'}
-                      </Button>
-                    </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">{t.addCoins || 'Add Coins'}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUpdateCurrency(post.currency + 1)}
+                    >
+                      +1
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUpdateCurrency(post.currency + 5)}
+                    >
+                      +5
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUpdateCurrency(post.currency + 10)}
+                    >
+                      +10
+                    </Button>
                   </div>
                 </div>
-              )}
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">{t.removeCoins || 'Remove Coins'}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUpdateCurrency(Math.max(0, post.currency - 1))}
+                      disabled={post.currency < 1}
+                    >
+                      -1
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUpdateCurrency(Math.max(0, post.currency - 5))}
+                      disabled={post.currency < 5}
+                    >
+                      -5
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUpdateCurrency(Math.max(0, post.currency - 10))}
+                      disabled={post.currency < 10}
+                    >
+                      -10
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Manual Currency Adjustment */}
+              <div className="pt-2 border-t">
+                <h4 className="text-sm font-medium mb-2">{t.manualCurrencyAdjustment || 'Manual Adjustment'}</h4>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={manualCurrencyAmount}
+                    onChange={(e) => setManualCurrencyAmount(parseInt(e.target.value) || 0)}
+                    placeholder="+/- amount"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleAddManualCurrency}
+                    disabled={manualCurrencyAmount === 0}
+                  >
+                    {manualCurrencyAmount > 0 ? 'Add' : manualCurrencyAmount < 0 ? 'Remove' : 'Apply'}
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t.totalItems || 'Total Items'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              <span className="text-2xl font-bold">{inventoryWithPrices.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      {post.inventory && Object.keys(post.inventory).length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t.priceHistory || 'Price History'}</CardTitle>
-              <CardDescription>{t.priceHistoryDesc || 'Price trends over the last 7 days'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <canvas ref={priceHistoryChartRef}></canvas>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t.stockDistribution || 'Stock Distribution'}</CardTitle>
-              <CardDescription>{t.stockDistributionDesc || 'Current inventory breakdown'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <canvas ref={stockDistributionChartRef}></canvas>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        )}
+      </Card>
 
       {/* Inventory Table */}
       <Card>
@@ -646,6 +638,35 @@ export default function TradingPostDetail({ params }: { params: { id: string } }
           </div>
         </CardContent>
       </Card>
+
+      {/* Charts */}
+      {post.inventory && Object.keys(post.inventory).length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t.priceAndStockHistory || 'Price & Stock History'}</CardTitle>
+              <CardDescription>{t.priceAndStockHistoryDesc || 'Price and stock trends over the last 30 minutes'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <canvas ref={priceHistoryChartRef}></canvas>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t.stockDistribution || 'Stock Distribution'}</CardTitle>
+              <CardDescription>{t.stockDistributionDesc || 'Current inventory breakdown'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <canvas ref={stockDistributionChartRef}></canvas>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

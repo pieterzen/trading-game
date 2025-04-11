@@ -28,8 +28,8 @@ export default function TradingPostsManagement() {
     }
   };
 
-  const handleUpdatePost = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdatePost = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (editingPost && editingPost.name) {
       const post = gameSession.tradingPosts.find(p => p.id === editingPost.id);
       if (post) {
@@ -77,7 +77,7 @@ export default function TradingPostsManagement() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label htmlFor="description" className="text-sm font-medium">Description</label>
                 <Input
@@ -89,7 +89,7 @@ export default function TradingPostsManagement() {
                 />
               </div>
             </div>
-            
+
             <div>
               <Button type="submit" className="mt-2">
                 Add Trading Post
@@ -98,56 +98,7 @@ export default function TradingPostsManagement() {
           </form>
         </CardContent>
       </Card>
-      
-      {editingPost && (
-        <Card className="bg-muted/40">
-          <CardHeader>
-            <CardTitle>Edit Trading Post</CardTitle>
-            <CardDescription>Update the selected trading post's details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdatePost} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="edit-name" className="text-sm font-medium">Name</label>
-                  <Input
-                    type="text"
-                    name="edit-name"
-                    id="edit-name"
-                    value={editingPost.name}
-                    onChange={(e) => setEditingPost({...editingPost, name: e.target.value})}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
-                  <Input
-                    type="text"
-                    name="edit-description"
-                    id="edit-description"
-                    value={editingPost.description}
-                    onChange={(e) => setEditingPost({...editingPost, description: e.target.value})}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button type="submit">
-                  Save Changes
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setEditingPost(null)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+
 
       <Card>
         <CardHeader>
@@ -165,50 +116,95 @@ export default function TradingPostsManagement() {
                 </tr>
               </thead>
               <tbody>
-                {gameSession.tradingPosts.map((post) => (
-                  <tr key={post.id} className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-4 w-4 text-primary" />
+                {gameSession.tradingPosts.map((post) => {
+                  const isEditing = editingPost && editingPost.id === post.id;
+
+                  return (
+                    <tr key={post.id} className={`border-b ${isEditing ? 'bg-muted/30' : 'hover:bg-muted/50'}`}>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+                            <Building2 className="h-4 w-4 text-primary" />
+                          </div>
+                          {isEditing ? (
+                            <Input
+                              type="text"
+                              value={editingPost.name}
+                              onChange={(e) => setEditingPost({...editingPost, name: e.target.value})}
+                              className="h-8 w-full max-w-[200px]"
+                              required
+                            />
+                          ) : (
+                            <span className="font-medium">{post.name}</span>
+                          )}
                         </div>
-                        <span className="font-medium">{post.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">{post.description}</td>
-                    <td className="py-3 px-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`/trading-post/${post.id}`}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                          >
-                            View Details
-                          </Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingPost({
-                            id: post.id,
-                            name: post.name,
-                            description: post.description || ''
-                          })}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive"
-                          onClick={() => handleRemovePost(post.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {isEditing ? (
+                          <Input
+                            type="text"
+                            value={editingPost.description}
+                            onChange={(e) => setEditingPost({...editingPost, description: e.target.value})}
+                            className="h-8 w-full"
+                          />
+                        ) : (
+                          post.description
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {isEditing ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  if (editingPost.name) {
+                                    handleUpdatePost();
+                                  } else {
+                                    setEditingPost(null);
+                                  }
+                                }}
+                              >
+                                Done
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Link href={`/trading-post/${post.id}`}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Manage
+                                </Button>
+                              </Link>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingPost({
+                                  id: post.id,
+                                  name: post.name,
+                                  description: post.description || ''
+                                })}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive"
+                                onClick={() => handleRemovePost(post.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {gameSession.tradingPosts.length === 0 && (
                   <tr>
                     <td colSpan={3} className="py-8 text-center text-muted-foreground">

@@ -17,12 +17,12 @@ export default function GameOverview() {
   const stockChartInstance = useRef(null);
 
   // Memoize colors to prevent regeneration on each render
-  const itemColors = useMemo(() => 
+  const itemColors = useMemo(() =>
     generateColors(gameSession.items.length),
     [gameSession.items.length]
   );
-  
-  const postColors = useMemo(() => 
+
+  const postColors = useMemo(() =>
     generateColors(gameSession.tradingPosts.length),
     [gameSession.tradingPosts.length]
   );
@@ -42,7 +42,7 @@ export default function GameOverview() {
     if (!gameSession.isActive || gameSession.items.length === 0 || gameSession.tradingPosts.length === 0) {
       return null;
     }
-    
+
     const labels = gameSession.tradingPosts.map(post => post.name);
     const datasets = gameSession.items.map((item, index) => {
       const data = gameSession.tradingPosts.map(post => calculatePriceOptimized(post.id, item.id));
@@ -63,7 +63,7 @@ export default function GameOverview() {
     if (!gameSession.isActive || gameSession.tradingPosts.length === 0) {
       return null;
     }
-    
+
     const labels = gameSession.tradingPosts.map(post => post.name);
     const data = gameSession.tradingPosts.map(post => post.currency);
 
@@ -75,10 +75,12 @@ export default function GameOverview() {
     if (!gameSession.isActive || gameSession.items.length === 0 || gameSession.tradingPosts.length === 0) {
       return null;
     }
-    
+
     const labels = gameSession.items.map(item => item.name);
     const datasets = gameSession.tradingPosts.map((post, index) => {
       const data = gameSession.items.map(item => {
+        // Check if post.inventory exists before accessing it
+        if (!post.inventory) return 0;
         const inventoryItem = post.inventory[item.id];
         return inventoryItem ? inventoryItem.quantity : 0;
       });
@@ -255,7 +257,7 @@ export default function GameOverview() {
           Real-time data visualizations of the trading game.
         </p>
       </div>
-      
+
       <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
@@ -263,13 +265,13 @@ export default function GameOverview() {
               <canvas ref={priceChartRef}></canvas>
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
             <div className="h-64">
               <canvas ref={currencyChartRef}></canvas>
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg shadow-sm lg:col-span-2">
             <div className="h-64">
               <canvas ref={stockChartRef}></canvas>

@@ -74,11 +74,16 @@ export default function ItemsManagement() {
                   type="number"
                   name="basePrice"
                   id="basePrice"
-                  min="0"
-                  step="0.01"
+                  min="1"
+                  step="1"
                   value={newItem.basePrice}
-                  onChange={(e) => setNewItem({...newItem, basePrice: parseFloat(e.target.value)})}
+                  onChange={(e) => setNewItem({...newItem, basePrice: Math.floor(parseFloat(e.target.value))})}
                   required
+                  onBlur={(e) => {
+                    // Ensure the value is a whole number on blur
+                    const value = Math.floor(parseFloat(e.target.value));
+                    setNewItem({...newItem, basePrice: value});
+                  }}
                 />
               </div>
 
@@ -130,11 +135,16 @@ export default function ItemsManagement() {
                     type="number"
                     name="edit-basePrice"
                     id="edit-basePrice"
-                    min="0"
-                    step="0.01"
+                    min="1"
+                    step="1"
                     value={editingItem.basePrice}
-                    onChange={(e) => setEditingItem({...editingItem, basePrice: parseFloat(e.target.value)})}
+                    onChange={(e) => setEditingItem({...editingItem, basePrice: Math.floor(parseFloat(e.target.value))})}
                     required
+                    onBlur={(e) => {
+                      // Ensure the value is a whole number on blur
+                      const value = Math.floor(parseFloat(e.target.value));
+                      setEditingItem({...editingItem, basePrice: value});
+                    }}
                   />
                 </div>
 
@@ -184,44 +194,108 @@ export default function ItemsManagement() {
                 </tr>
               </thead>
               <tbody>
-                {gameSession.items.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
-                          <Package className="h-4 w-4 text-primary" />
+                {gameSession.items.map((item) => {
+                  const isEditing = editingItem && editingItem.id === item.id;
+
+                  return (
+                    <tr key={item.id} className={`border-b ${isEditing ? 'bg-muted/30' : 'hover:bg-muted/50'}`}>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+                            <Package className="h-4 w-4 text-primary" />
+                          </div>
+                          {isEditing ? (
+                            <Input
+                              type="text"
+                              value={editingItem.name}
+                              onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                              className="h-8 w-full max-w-[200px]"
+                              required
+                            />
+                          ) : (
+                            <span className="font-medium">{item.name}</span>
+                          )}
                         </div>
-                        <span className="font-medium">{item.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">{item.basePrice}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{item.description}</td>
-                    <td className="py-3 px-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingItem({
-                            id: item.id,
-                            name: item.name,
-                            basePrice: item.basePrice,
-                            description: item.description || ''
-                          })}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive"
-                          onClick={() => handleRemoveItem(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={editingItem.basePrice}
+                            onChange={(e) => setEditingItem({...editingItem, basePrice: Math.floor(parseFloat(e.target.value))})}
+                            className="h-8 w-24"
+                            required
+                            onBlur={(e) => {
+                              // Ensure the value is a whole number on blur
+                              const value = Math.floor(parseFloat(e.target.value));
+                              setEditingItem({...editingItem, basePrice: value});
+                            }}
+                          />
+                        ) : (
+                          item.basePrice
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {isEditing ? (
+                          <Input
+                            type="text"
+                            value={editingItem.description}
+                            onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
+                            className="h-8 w-full"
+                          />
+                        ) : (
+                          item.description
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {isEditing ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  if (editingItem.name && editingItem.basePrice > 0) {
+                                    handleUpdateItem();
+                                  } else {
+                                    setEditingItem(null);
+                                  }
+                                }}
+                              >
+                                Done
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingItem({
+                                  id: item.id,
+                                  name: item.name,
+                                  basePrice: item.basePrice,
+                                  description: item.description || ''
+                                })}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive"
+                                onClick={() => handleRemoveItem(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {gameSession.items.length === 0 && (
                   <tr>
                     <td colSpan={4} className="py-8 text-center text-muted-foreground">
