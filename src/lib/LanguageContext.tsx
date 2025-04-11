@@ -9,9 +9,10 @@ export interface Translation {
   selectLanguage: string;
   tradingGame: string;
   navigation: string;
-  home: string;
+  home?: string;
   tradingPosts: string;
-  admin: string;
+  admin?: string;
+  setup: string;
   adminDescription: string;
   gameStatus: string;
 
@@ -24,6 +25,7 @@ export interface Translation {
   // Inventory
   inventory: string;
   currentInventory: string;
+  items?: string;
   item: string;
   quantity: string;
   basePrice: string;
@@ -61,6 +63,7 @@ export const en: Translation = {
   home: 'Home',
   tradingPosts: 'Trading Posts',
   admin: 'Admin',
+  setup: 'Setup',
   adminDescription: 'Manage your trading game from a central location.',
   gameStatus: 'Game Status',
 
@@ -73,6 +76,7 @@ export const en: Translation = {
   // Inventory
   inventory: 'Inventory',
   currentInventory: 'Current Inventory',
+  items: 'Items',
   item: 'Item',
   quantity: 'Quantity',
   basePrice: 'Base Price',
@@ -110,6 +114,7 @@ export const nl: Translation = {
   home: 'Home',
   tradingPosts: 'Handelsposten',
   admin: 'Beheer',
+  setup: 'Instellingen',
   adminDescription: 'Beheer je handelsspel vanaf een centrale locatie.',
   gameStatus: 'Spelstatus',
 

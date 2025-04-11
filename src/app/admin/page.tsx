@@ -340,9 +340,9 @@ export default function AdminDashboard() {
   }, [stockChartData]);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t.admin || 'Admin Dashboard'}</h1>
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">{t.setup || 'Setup'}</h1>
         <p className="text-muted-foreground">
           {t.adminDescription || 'Manage your trading game from a central location.'}
         </p>

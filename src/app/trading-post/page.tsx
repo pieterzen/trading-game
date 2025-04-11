@@ -1,20 +1,44 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameContext } from '@/lib/GameContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import Link from 'next/link';
-import { Building2, Coins, Package, Plus } from 'lucide-react';
+import { Building2, Coins, Package, Plus, Save, Edit, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 export default function TradingPostSelection() {
-  const { gameSession } = useGameContext();
+  const { gameSession, updateCurrency } = useGameContext();
   const { t } = useLanguage();
 
+  // State for tracking which post's currency is being edited
+  const [editingCurrency, setEditingCurrency] = useState<string | null>(null);
+  const [currencyValue, setCurrencyValue] = useState<number>(0);
+
+  // Handle starting to edit currency
+  const handleEditCurrency = (postId: string, currentValue: number) => {
+    setEditingCurrency(postId);
+    setCurrencyValue(currentValue);
+  };
+
+  // Handle saving currency
+  const handleSaveCurrency = (postId: string) => {
+    if (currencyValue >= 0) {
+      updateCurrency(postId, currencyValue);
+    }
+    setEditingCurrency(null);
+  };
+
+  // Handle input blur (save on blur)
+  const handleInputBlur = (postId: string) => {
+    handleSaveCurrency(postId);
+  };
+
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">{t.selectPost || 'Trading Posts'}</h1>
         <p className="text-muted-foreground">
@@ -45,10 +69,29 @@ export default function TradingPostSelection() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1 rounded-lg border p-3">
                     <span className="text-xs font-medium text-muted-foreground">{t.currency || 'Currency'}</span>
-                    <div className="flex items-center gap-2">
-                      <Coins className="h-4 w-4 text-amber-500" />
-                      <span className="font-medium">{post.currency}</span>
-                    </div>
+                    {editingCurrency === post.id ? (
+                      <div className="flex items-center gap-1">
+                        <Coins className="h-4 w-4 text-amber-500" />
+                        <Input
+                          type="number"
+                          value={currencyValue}
+                          onChange={(e) => setCurrencyValue(parseInt(e.target.value) || 0)}
+                          onBlur={() => handleInputBlur(post.id)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveCurrency(post.id)}
+                          className="h-7 w-20 text-sm"
+                          min="0"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
+                        onClick={() => gameSession.isActive && handleEditCurrency(post.id, post.currency)}
+                      >
+                        <Coins className="h-4 w-4 text-amber-500" />
+                        <span className="font-medium">{post.currency}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-1 rounded-lg border p-3">

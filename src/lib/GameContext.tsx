@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { GameSession, Item, TradingPost, defaultGameSession } from './types';
+import { useFirebase } from './FirebaseContext';
 
 interface GameContextType {
   gameSession: GameSession;
@@ -34,30 +35,50 @@ interface GameProviderProps {
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
-  const [gameSession, setGameSession] = useState<GameSession>(() => {
-    // Try to load from localStorage on initial render (client-side only)
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('gameSession');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          // Convert string dates back to Date objects
-          if (parsed.startTime) parsed.startTime = new Date(parsed.startTime);
-          if (parsed.endTime) parsed.endTime = new Date(parsed.endTime);
-          parsed.createdAt = new Date(parsed.createdAt);
-          return parsed;
-        } catch (e) {
-          console.error('Failed to parse saved game session:', e);
-        }
-      }
-    }
-    return defaultGameSession;
-  });
+  const firebase = useFirebase();
+  const [gameSession, setGameSession] = useState<GameSession>(defaultGameSession);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Save to localStorage whenever gameSession changes
+  // Load game session from Firebase on initial render
   useEffect(() => {
-    localStorage.setItem('gameSession', JSON.stringify(gameSession));
-  }, [gameSession]);
+    const loadGameSession = async () => {
+      try {
+        // Set up a listener for real-time updates
+        const unsubscribe = firebase.listenToGameSession((data) => {
+          if (data) {
+            // Convert string dates back to Date objects
+            if (data.startTime) data.startTime = new Date(data.startTime);
+            if (data.endTime) data.endTime = new Date(data.endTime);
+            data.createdAt = new Date(data.createdAt);
+            setGameSession(data);
+          } else {
+            // If no data exists in Firebase, initialize with default and save it
+            firebase.saveGameSession(defaultGameSession);
+            setGameSession(defaultGameSession);
+          }
+          setIsInitialized(true);
+        });
+
+        // Clean up the listener when component unmounts
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Failed to load game session from Firebase:', error);
+        setGameSession(defaultGameSession);
+        setIsInitialized(true);
+      }
+    };
+
+    loadGameSession();
+  }, [firebase]);
+
+  // Save to Firebase whenever gameSession changes (but only after initial load)
+  useEffect(() => {
+    if (isInitialized) {
+      firebase.saveGameSession(gameSession).catch(error => {
+        console.error('Failed to save game session to Firebase:', error);
+      });
+    }
+  }, [gameSession, firebase, isInitialized]);
 
   const startGame = () => {
     setGameSession(prev => ({
@@ -166,6 +187,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       // Calculate new currency value, ensuring it doesn't go below 0
       const newCurrency = Math.max(0, post.currency + currencyChange);
 
+      // Update inventory in Firebase
+      firebase.updateTradingPostInventory(postId, itemId, quantity)
+        .catch(error => console.error('Failed to update inventory in Firebase:', error));
+
+      // If currency is changing, update that too
+      if (updateCurrencyOnChange && currencyChange !== 0) {
+        firebase.updateTradingPostCurrency(postId, newCurrency)
+          .catch(error => console.error('Failed to update currency in Firebase:', error));
+      }
+
       return {
         ...prev,
         tradingPosts: prev.tradingPosts.map(p => {
@@ -191,6 +222,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   };
 
   const updateCurrency = (postId: string, amount: number) => {
+    // Update in Firebase
+    firebase.updateTradingPostCurrency(postId, amount)
+      .catch(error => console.error('Failed to update currency in Firebase:', error));
+
+    // Update local state
     setGameSession(prev => ({
       ...prev,
       tradingPosts: prev.tradingPosts.map(post => {
