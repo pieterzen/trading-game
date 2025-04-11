@@ -64,7 +64,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       ...prev,
       startTime: new Date(),
       isActive: true,
-      endTime: null
+      endTime: null,
+      // Set all trading posts to active when the game starts
+      tradingPosts: prev.tradingPosts.map(post => ({
+        ...post,
+        isActive: true
+      }))
     }));
   };
 
@@ -80,7 +85,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setGameSession(prev => ({
       ...prev,
       endTime: new Date(),
-      isActive: false
+      isActive: false,
+      // Set all trading posts to inactive when the game ends
+      tradingPosts: prev.tradingPosts.map(post => ({
+        ...post,
+        isActive: false
+      }))
     }));
   };
 
@@ -108,7 +118,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const addTradingPost = (post: TradingPost) => {
     setGameSession(prev => ({
       ...prev,
-      tradingPosts: [...prev.tradingPosts, { ...post, id: Math.random().toString(36).substring(2, 9) }]
+      tradingPosts: [...prev.tradingPosts, {
+        ...post,
+        id: Math.random().toString(36).substring(2, 9),
+        // Set the trading post's active state based on the game session's active state
+        isActive: prev.isActive
+      }]
     }));
   };
 
@@ -126,20 +141,40 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }));
   };
 
-  const updateInventory = (postId: string, itemId: string, quantity: number) => {
+  const updateInventory = (postId: string, itemId: string, quantity: number, updateCurrencyOnChange: boolean = true) => {
     setGameSession(prev => {
       // Find the item to get its name and basePrice
       const item = prev.items.find(i => i.id === itemId);
       if (!item) return prev;
-      
+
+      // Find the post
+      const post = prev.tradingPosts.find(p => p.id === postId);
+      if (!post) return prev;
+
+      // Calculate the price of the item
+      const price = Math.round(item.basePrice * ((2 - (1.5 * Math.max(0, Math.min(10, quantity)) / 10)) * 0.7 + 0.3));
+
+      // Get the current quantity
+      const currentQuantity = post.inventory[itemId]?.quantity || 0;
+
+      // Calculate the difference in quantity
+      const quantityDiff = quantity - currentQuantity;
+
+      // Calculate the currency change (negative for buying, positive for selling)
+      const currencyChange = updateCurrencyOnChange ? -quantityDiff * price : 0;
+
+      // Calculate new currency value, ensuring it doesn't go below 0
+      const newCurrency = Math.max(0, post.currency + currencyChange);
+
       return {
         ...prev,
-        tradingPosts: prev.tradingPosts.map(post => {
-          if (post.id === postId) {
+        tradingPosts: prev.tradingPosts.map(p => {
+          if (p.id === postId) {
             return {
-              ...post,
+              ...p,
+              currency: newCurrency,
               inventory: {
-                ...post.inventory,
+                ...p.inventory,
                 [itemId]: {
                   id: itemId,
                   name: item.name,
@@ -149,7 +184,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
               }
             };
           }
-          return post;
+          return p;
         })
       };
     });
@@ -174,36 +209,36 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const calculatePrice = (postId: string, itemId: string): number => {
     const post = gameSession.tradingPosts.find(p => p.id === postId);
     const item = gameSession.items.find(i => i.id === itemId);
-    
+
     if (!post || !item) return 0;
-    
+
     const inventoryItem = post.inventory[itemId];
     const stock = inventoryItem ? inventoryItem.quantity : 0;
     const basePrice = item.basePrice;
-    
+
     // Get average currency across all active trading posts for comparison
     const activePosts = gameSession.tradingPosts.filter(p => p.isActive);
-    const averageCurrency = activePosts.length > 0 
-      ? activePosts.reduce((sum, p) => sum + p.currency, 0) / activePosts.length 
+    const averageCurrency = activePosts.length > 0
+      ? activePosts.reduce((sum, p) => sum + p.currency, 0) / activePosts.length
       : 100; // Default value if no active posts
-    
+
     // Calculate stock factor: price increases as stock decreases
     // When stock is 0, stock factor is 2x
     // When stock is high (10+), stock factor approaches 0.5x
     const stockFactor = Math.max(0, Math.min(10, stock));
     const stockMultiplier = 2 - (1.5 * stockFactor / 10);
-    
+
     // Calculate currency factor: price increases as currency increases
     // When currency is high compared to average, prices increase (sellers market)
     // When currency is low compared to average, prices decrease (buyers market)
     const currencyRatio = post.currency / averageCurrency;
     const currencyMultiplier = Math.max(0.75, Math.min(1.25, 0.75 + (currencyRatio * 0.5)));
-    
+
     // Combine factors: stock has 70% weight, currency has 30% weight
     const combinedFactor = (stockMultiplier * 0.7) + (currencyMultiplier * 0.3);
-    
-    // Round to 2 decimal places
-    return Math.round(basePrice * combinedFactor * 100) / 100;
+
+    // Round to full numbers
+    return Math.round(basePrice * combinedFactor);
   };
 
   const value = {

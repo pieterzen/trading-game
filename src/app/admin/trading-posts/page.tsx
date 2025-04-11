@@ -2,12 +2,17 @@
 
 import React from 'react';
 import { useGameContext } from '@/lib/GameContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building2, Pencil, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function TradingPostsManagement() {
-  const { gameSession, addTradingPost, updateTradingPost, removeTradingPost, updateCurrency } = useGameContext();
-  const [newPost, setNewPost] = React.useState({ name: '', description: '', currency: 0 });
-  const [editingPost, setEditingPost] = React.useState<null | { id: string, name: string, description: string, currency: number }>(null);
-  
+  const { gameSession, addTradingPost, updateTradingPost, removeTradingPost } = useGameContext();
+  const [newPost, setNewPost] = React.useState({ name: '', description: '' });
+  const [editingPost, setEditingPost] = React.useState<null | { id: string, name: string, description: string }>(null);
+
   const handleAddPost = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPost.name) {
@@ -15,14 +20,14 @@ export default function TradingPostsManagement() {
         id: Math.random().toString(36).substring(2, 9),
         name: newPost.name,
         description: newPost.description,
-        isActive: false,
+        isActive: true,
         inventory: {},
-        currency: newPost.currency
+        currency: 100 // Default starting currency
       });
-      setNewPost({ name: '', description: '', currency: 0 });
+      setNewPost({ name: '', description: '' });
     }
   };
-  
+
   const handleUpdatePost = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingPost && editingPost.name) {
@@ -31,224 +36,194 @@ export default function TradingPostsManagement() {
         updateTradingPost({
           ...post,
           name: editingPost.name,
-          description: editingPost.description,
-          currency: editingPost.currency
+          description: editingPost.description
         });
       }
       setEditingPost(null);
     }
   };
-  
+
   const handleRemovePost = (id: string) => {
     if (window.confirm('Are you sure you want to remove this trading post?')) {
       removeTradingPost(id);
     }
   };
-  
-  const handleCurrencyChange = (postId: string, amount: number) => {
-    updateCurrency(postId, amount);
-  };
-  
+
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Trading Posts Management</h3>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">
-          Add, edit, or remove trading posts in the game.
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Trading Posts Management</h1>
+        <p className="text-muted-foreground">
+          Create and manage trading posts in the game.
         </p>
       </div>
-      
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        <h4 className="text-md font-medium text-gray-700 mb-4">Add New Trading Post</h4>
-        <form onSubmit={handleAddPost} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                value={newPost.name}
-                onChange={(e) => setNewPost({...newPost, name: e.target.value})}
-                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-              <input
-                type="text"
-                name="description"
-                id="description"
-                value={newPost.description}
-                onChange={(e) => setNewPost({...newPost, description: e.target.value})}
-                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="currency" className="block text-sm font-medium text-gray-700">Starting Currency</label>
-              <input
-                type="number"
-                name="currency"
-                id="currency"
-                min="0"
-                value={newPost.currency}
-                onChange={(e) => setNewPost({...newPost, currency: parseInt(e.target.value)})}
-                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <button
-              type="submit"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Add Trading Post
-            </button>
-          </div>
-        </form>
-      </div>
-      
-      {editingPost && (
-        <div className="border-t border-gray-200 px-4 py-5 sm:p-6 bg-gray-50">
-          <h4 className="text-md font-medium text-gray-700 mb-4">Edit Trading Post</h4>
-          <form onSubmit={handleUpdatePost} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">Name</label>
-                <input
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add New Trading Post</CardTitle>
+          <CardDescription>Create a new trading location for the game</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddPost} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">Name</label>
+                <Input
                   type="text"
-                  name="edit-name"
-                  id="edit-name"
-                  value={editingPost.name}
-                  onChange={(e) => setEditingPost({...editingPost, name: e.target.value})}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  name="name"
+                  id="name"
+                  value={newPost.name}
+                  onChange={(e) => setNewPost({...newPost, name: e.target.value})}
                   required
                 />
               </div>
               
-              <div>
-                <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700">Description</label>
-                <input
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">Description</label>
+                <Input
                   type="text"
-                  name="edit-description"
-                  id="edit-description"
-                  value={editingPost.description}
-                  onChange={(e) => setEditingPost({...editingPost, description: e.target.value})}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="edit-currency" className="block text-sm font-medium text-gray-700">Currency</label>
-                <input
-                  type="number"
-                  name="edit-currency"
-                  id="edit-currency"
-                  min="0"
-                  value={editingPost.currency}
-                  onChange={(e) => setEditingPost({...editingPost, currency: parseInt(e.target.value)})}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  name="description"
+                  id="description"
+                  value={newPost.description}
+                  onChange={(e) => setNewPost({...newPost, description: e.target.value})}
                 />
               </div>
             </div>
             
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Save Changes
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingPost(null)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Cancel
-              </button>
+            <div>
+              <Button type="submit" className="mt-2">
+                Add Trading Post
+              </Button>
             </div>
           </form>
-        </div>
-      )}
+        </CardContent>
+      </Card>
       
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        <h4 className="text-md font-medium text-gray-700 mb-4">Current Trading Posts</h4>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {gameSession.tradingPosts.map((post) => (
-                <tr key={post.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{post.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.description}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      post.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {post.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <span className="mr-2">{post.currency}</span>
-                      <button
-                        onClick={() => handleCurrencyChange(post.id, post.currency + 10)}
-                        className="text-xs text-green-600 hover:text-green-900 mr-1"
-                      >
-                        +10
-                      </button>
-                      <button
-                        onClick={() => handleCurrencyChange(post.id, Math.max(0, post.currency - 10))}
-                        className="text-xs text-red-600 hover:text-red-900"
-                      >
-                        -10
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => setEditingPost({
-                        id: post.id,
-                        name: post.name,
-                        description: post.description || '',
-                        currency: post.currency
-                      })}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleRemovePost(post.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Remove
-                    </button>
-                  </td>
+      {editingPost && (
+        <Card className="bg-muted/40">
+          <CardHeader>
+            <CardTitle>Edit Trading Post</CardTitle>
+            <CardDescription>Update the selected trading post's details</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdatePost} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="edit-name" className="text-sm font-medium">Name</label>
+                  <Input
+                    type="text"
+                    name="edit-name"
+                    id="edit-name"
+                    value={editingPost.name}
+                    onChange={(e) => setEditingPost({...editingPost, name: e.target.value})}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
+                  <Input
+                    type="text"
+                    name="edit-description"
+                    id="edit-description"
+                    value={editingPost.description}
+                    onChange={(e) => setEditingPost({...editingPost, description: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button type="submit">
+                  Save Changes
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setEditingPost(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Trading Posts</CardTitle>
+          <CardDescription>Manage your existing trading posts</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                  <th className="py-3 px-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-              {gameSession.tradingPosts.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No trading posts added yet</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {gameSession.tradingPosts.map((post) => (
+                  <tr key={post.id} className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="font-medium">{post.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">{post.description}</td>
+                    <td className="py-3 px-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/trading-post/${post.id}`}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                          >
+                            View Details
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingPost({
+                            id: post.id,
+                            name: post.name,
+                            description: post.description || ''
+                          })}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive"
+                          onClick={() => handleRemovePost(post.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {gameSession.tradingPosts.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Building2 className="h-8 w-8 text-muted-foreground/50" />
+                        <p>No trading posts added yet</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

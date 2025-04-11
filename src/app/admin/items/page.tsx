@@ -2,12 +2,16 @@
 
 import React from 'react';
 import { useGameContext } from '@/lib/GameContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, Pencil, Trash2 } from 'lucide-react';
 
 export default function ItemsManagement() {
   const { gameSession, addItem, updateItem, removeItem } = useGameContext();
   const [newItem, setNewItem] = React.useState({ name: '', basePrice: 0, description: '' });
   const [editingItem, setEditingItem] = React.useState<null | { id: string, name: string, basePrice: number, description: string }>(null);
-  
+
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (newItem.name && newItem.basePrice > 0) {
@@ -20,7 +24,7 @@ export default function ItemsManagement() {
       setNewItem({ name: '', basePrice: 0, description: '' });
     }
   };
-  
+
   const handleUpdateItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingItem && editingItem.name && editingItem.basePrice > 0) {
@@ -28,191 +32,211 @@ export default function ItemsManagement() {
       setEditingItem(null);
     }
   };
-  
+
   const handleRemoveItem = (id: string) => {
     if (window.confirm('Are you sure you want to remove this item?')) {
       removeItem(id);
     }
   };
-  
+
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Items Management</h3>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Items Management</h1>
+        <p className="text-muted-foreground">
           Add, edit, or remove items that can be traded in the game.
         </p>
       </div>
-      
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        <h4 className="text-md font-medium text-gray-700 mb-4">Add New Item</h4>
-        <form onSubmit={handleAddItem} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                value={newItem.name}
-                onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="basePrice" className="block text-sm font-medium text-gray-700">Base Price</label>
-              <input
-                type="number"
-                name="basePrice"
-                id="basePrice"
-                min="0"
-                step="0.01"
-                value={newItem.basePrice}
-                onChange={(e) => setNewItem({...newItem, basePrice: parseFloat(e.target.value)})}
-                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-              <input
-                type="text"
-                name="description"
-                id="description"
-                value={newItem.description}
-                onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <button
-              type="submit"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Add Item
-            </button>
-          </div>
-        </form>
-      </div>
-      
-      {editingItem && (
-        <div className="border-t border-gray-200 px-4 py-5 sm:p-6 bg-gray-50">
-          <h4 className="text-md font-medium text-gray-700 mb-4">Edit Item</h4>
-          <form onSubmit={handleUpdateItem} className="space-y-4">
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add New Item</CardTitle>
+          <CardDescription>Create a new item that can be traded in the game</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddItem} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">Name</label>
-                <input
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">Name</label>
+                <Input
                   type="text"
-                  name="edit-name"
-                  id="edit-name"
-                  value={editingItem.name}
-                  onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  name="name"
+                  id="name"
+                  value={newItem.name}
+                  onChange={(e) => setNewItem({...newItem, name: e.target.value})}
                   required
                 />
               </div>
-              
-              <div>
-                <label htmlFor="edit-basePrice" className="block text-sm font-medium text-gray-700">Base Price</label>
-                <input
+
+              <div className="space-y-2">
+                <label htmlFor="basePrice" className="text-sm font-medium">Base Price</label>
+                <Input
                   type="number"
-                  name="edit-basePrice"
-                  id="edit-basePrice"
+                  name="basePrice"
+                  id="basePrice"
                   min="0"
                   step="0.01"
-                  value={editingItem.basePrice}
-                  onChange={(e) => setEditingItem({...editingItem, basePrice: parseFloat(e.target.value)})}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  value={newItem.basePrice}
+                  onChange={(e) => setNewItem({...newItem, basePrice: parseFloat(e.target.value)})}
                   required
                 />
               </div>
-              
-              <div>
-                <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700">Description</label>
-                <input
+
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">Description</label>
+                <Input
                   type="text"
-                  name="edit-description"
-                  id="edit-description"
-                  value={editingItem.description}
-                  onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
-                  className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                  name="description"
+                  id="description"
+                  value={newItem.description}
+                  onChange={(e) => setNewItem({...newItem, description: e.target.value})}
                 />
               </div>
             </div>
-            
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Save Changes
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingItem(null)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Cancel
-              </button>
+
+            <div>
+              <Button type="submit" className="mt-2">
+                Add Item
+              </Button>
             </div>
           </form>
-        </div>
+        </CardContent>
+      </Card>
+
+      {editingItem && (
+        <Card className="bg-muted/40">
+          <CardHeader>
+            <CardTitle>Edit Item</CardTitle>
+            <CardDescription>Update the selected item's details</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateItem} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <label htmlFor="edit-name" className="text-sm font-medium">Name</label>
+                  <Input
+                    type="text"
+                    name="edit-name"
+                    id="edit-name"
+                    value={editingItem.name}
+                    onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="edit-basePrice" className="text-sm font-medium">Base Price</label>
+                  <Input
+                    type="number"
+                    name="edit-basePrice"
+                    id="edit-basePrice"
+                    min="0"
+                    step="0.01"
+                    value={editingItem.basePrice}
+                    onChange={(e) => setEditingItem({...editingItem, basePrice: parseFloat(e.target.value)})}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
+                  <Input
+                    type="text"
+                    name="edit-description"
+                    id="edit-description"
+                    value={editingItem.description}
+                    onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit">
+                  Save Changes
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingItem(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
-      
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        <h4 className="text-md font-medium text-gray-700 mb-4">Current Items</h4>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Price</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {gameSession.items.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.basePrice}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.description}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => setEditingItem({
-                        id: item.id,
-                        name: item.name,
-                        basePrice: item.basePrice,
-                        description: item.description || ''
-                      })}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Remove
-                    </button>
-                  </td>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Items</CardTitle>
+          <CardDescription>Manage your existing items</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Base Price</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                  <th className="py-3 px-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-              {gameSession.items.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No items added yet</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {gameSession.items.map((item) => (
+                  <tr key={item.id} className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+                          <Package className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="font-medium">{item.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">{item.basePrice}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">{item.description}</td>
+                    <td className="py-3 px-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingItem({
+                            id: item.id,
+                            name: item.name,
+                            basePrice: item.basePrice,
+                            description: item.description || ''
+                          })}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive"
+                          onClick={() => handleRemoveItem(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {gameSession.items.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Package className="h-8 w-8 text-muted-foreground/50" />
+                        <p>No items added yet</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -4,62 +4,94 @@ import React from 'react';
 import { useGameContext } from '@/lib/GameContext';
 import { useLanguage } from '@/lib/LanguageContext';
 import Link from 'next/link';
+import { Building2, Coins, Package, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function TradingPostSelection() {
   const { gameSession } = useGameContext();
   const { t } = useLanguage();
-  
+
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">{t.selectPost}</h3>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">
-          {t.manageInventory}
+    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">{t.selectPost || 'Trading Posts'}</h1>
+        <p className="text-muted-foreground">
+          {t.manageInventory || 'Select a trading post to manage inventory and currency'}
         </p>
       </div>
-      
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        {gameSession.tradingPosts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {gameSession.tradingPosts.map((post) => (
-              <div key={post.id} className="bg-gray-50 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <h5 className="font-medium text-gray-900 mb-2">{post.name}</h5>
-                <p className="text-sm text-gray-500 mb-4">{post.description}</p>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-medium text-gray-500">{t.currency}:</span>
-                  <span className="text-sm font-medium text-yellow-600">{post.currency} coins</span>
+
+      {gameSession.tradingPosts.length > 0 ? (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {gameSession.tradingPosts.map((post) => (
+            <Card key={post.id} className="overflow-hidden transition-all hover:shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded bg-primary/10 flex items-center justify-center">
+                      <Building2 className="h-4 w-4 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">{post.name}</CardTitle>
+                  </div>
+                  <Badge variant={post.isActive ? "success" : "secondary"}>
+                    {post.isActive ? t.gameActive || 'Active' : t.gameInactive || 'Inactive'}
+                  </Badge>
                 </div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm font-medium text-gray-500">Status:</span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    post.isActive 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {post.isActive ? t.gameActive : t.gameInactive}
-                  </span>
+                <CardDescription className="mt-2">{post.description}</CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1 rounded-lg border p-3">
+                    <span className="text-xs font-medium text-muted-foreground">{t.currency || 'Currency'}</span>
+                    <div className="flex items-center gap-2">
+                      <Coins className="h-4 w-4 text-amber-500" />
+                      <span className="font-medium">{post.currency}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 rounded-lg border p-3">
+                    <span className="text-xs font-medium text-muted-foreground">{t.items || 'Items'}</span>
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{Object.keys(post.inventory).length}</span>
+                    </div>
+                  </div>
                 </div>
-                <Link 
-                  href={`/trading-post/${post.id}`}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  {t.manageCurrency}
-                </Link>
+              </CardContent>
+
+              <CardFooter>
+                <Button asChild className="w-full">
+                  <Link href={`/trading-post/${post.id}`}>
+                    {t.manageCurrency || 'Manage Trading Post'}
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="mx-auto max-w-md">
+          <CardContent className="pt-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-4 py-8">
+              <div className="size-12 rounded-full bg-muted flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-muted-foreground" />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">No trading posts available.</p>
-            <Link 
-              href="/admin/trading-posts"
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Add Trading Posts
-            </Link>
-          </div>
-        )}
-      </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">No trading posts available</h3>
+                <p className="text-sm text-muted-foreground">Create trading posts to start managing inventory</p>
+              </div>
+              <Button asChild className="mt-2">
+                <Link href="/admin/trading-posts" className="inline-flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Trading Posts
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
